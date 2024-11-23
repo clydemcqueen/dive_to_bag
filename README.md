@@ -24,10 +24,6 @@ usage: df_to_bag.py [-h] [--out OUT] [--boot BOOT] in_path
 
 Read a dataflash log (BIN file) and write the IMU and MAG messages to a ROS2 bag.
 
-A note on time: while it is possible for TimeUS fields to be UNIX Epoch time, for the vast majority of ArduSub dataflash
-logs this field is always time-since-boot. You must provide a time-shift value on the command line to get UNIX Epoch
-times in the ROS2 bag. You may be able to get this information from SYSTEM_TIME messages in the tlog file(s).
-
 positional arguments:
   in_path
 
@@ -36,6 +32,22 @@ options:
   --out OUT    output bag path
   --boot BOOT  boot time, default is 0
 ~~~
+
+#### A note on time:
+
+This tool uses the mavutil-provided `_timestamp` attribute to get message time. The `_timestamp` attribute contains
+UNIX Epoch time _iff_ there is a GPS message in the log with a valid time, otherwise it contains time-since-boot.
+(Note that the WL UGPS extension does not provide valid time.) In this case, you can set the `--boot` value to
+set the boot time in the UNIX Epoch.
+
+TL;DR If your bags seem to start on January 1st, 1970, then you need to provide a `--boot` option.
+
+The best source of information for `--boot` is a [SYSTEM_TIME](https://mavlink.io/en/messages/common.html#SYSTEM_TIME)
+message from a tlog file, which contains 2 fields:
+* `time_unix_usec` -- this will the Raspberry Pi time, which _should be_ in UNIX Epoch time -- check it!
+* `time_boot_ms` -- this is time-since-boot
+
+A good value for `--boot` is `SYSTEM_TIME.time_unix_usec - SYSTEM_TIME.time_boot_ms * 1e3`.
 
 ### [tlog_to_bag](tlog_to_bag.py)
 

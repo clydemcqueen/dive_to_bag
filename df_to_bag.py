@@ -2,10 +2,6 @@
 
 """
 Read a dataflash log (BIN file) and write the IMU and MAG messages to a ROS2 bag.
-
-A note on time: while it is possible for TimeUS fields to be UNIX Epoch time, for the vast majority of ArduSub dataflash
-logs this field is always time-since-boot. You must provide a time-shift value on the command line to get UNIX Epoch
-times in the ROS2 bag. You may be able to get this information from SYSTEM_TIME messages in the tlog file(s).
 """
 
 import argparse
@@ -55,8 +51,10 @@ def df_to_bag(in_path: str, out_path: str, time_shift_s: float):
         if df_msg is None:
             break
 
-        # Both messages have a TimeUS field
-        time_us = df_msg.TimeUS + time_shift_us
+        # Use the _timestamp attribute:
+        # -- if there is a GPS source with valid time, then mavlink will fill in _timestamp with UNIX Epoch time
+        # -- otherwise this will be the same as df_msg.TimeUS, but in seconds
+        time_us = int(getattr(df_msg, '_timestamp', 0) * 1e6) + time_shift_us
 
         if df_msg.get_type() == 'IMU':
             topic = f'imu{df_msg.I}'
