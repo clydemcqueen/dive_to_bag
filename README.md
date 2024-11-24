@@ -6,8 +6,9 @@ These tools can be used to create ROS2 bags from dive logs, including:
 * Video (mp4) files
 
 The general process looks like this:
-* Examine the logs and select the files to process. For each BIN file, figure out the time-shift value to use
-* Generate bags from the logs, one bag per log
+* Examine the logs and select the files to process
+* Figure out the time-shift values to use for BIN and MP4 files
+* Generate bags, one bag per log or video
 * Use `ros2 bag convert` to merge the bags into a single bag
 
 ## Tools
@@ -70,10 +71,36 @@ options:
   --out OUT   output bag path
 ~~~
 
-### mp4_to_bag (proposed)
+### [video_to_bag](video_to_bag.py)
 
-Open a video (mp4 file) and write images to a bag.
+Open a video (anything that OpenCV can open, including mp4) and write images to a bag.
+
+Usage:
+~~~
+clyde@fastr2:~/projects/dive_to_bag (main %)$ ./video_to_bag.py --help
+usage: video_to_bag.py [-h] [--out OUT] [--start START] [--topic TOPIC] [--frame_id FRAME_ID] [--width WIDTH] [--height HEIGHT] [--mono] [--max MAX] in_path
+
+Use OpenCV to open a video file and write image messages to a ROS2 bag.
+
+positional arguments:
+  in_path
+
+options:
+  -h, --help           show this help message and exit
+  --out OUT            output bag path
+  --start START        video start time, default is 0
+  --topic TOPIC        topic, default is "image_raw"
+  --frame_id FRAME_ID  camera frame_id, default is "camera_frame"
+  --width WIDTH        scale width
+  --height HEIGHT      scale height
+  --mono               convert to monochrome
+  --max MAX            maximum number of frames to read
+~~~
+
+#### A note on time:
+
+You'll need to provide the timestamp for the 1st image in the UNIX Epoch.
 
 ### dive_to_bag (proposed)
 
-Examine all dive logs and generate a script that will process the files and generate a merged bag.
+Examine all dive logs and generate a script that will process the files and generate a merged bag. Deal with timestamps.
