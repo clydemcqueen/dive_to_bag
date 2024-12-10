@@ -23,7 +23,7 @@ import util
 # ROS2:         https://github.com/ros2/common_interfaces/blob/humble/geometry_msgs/msg/TwistStamped.msg
 
 
-def tlog_to_bag(in_path: str, out_path: str):
+def tlog_to_bag(in_path: str, out_path: str, tf: bool, gps0: tuple[float, float]):
     # Create bag, open for writing (append is not supported)
     writer = rosbag2_py.SequentialWriter()
     storage_options = rosbag2_py.StorageOptions(uri=out_path, storage_id='sqlite3')
@@ -40,6 +40,14 @@ def tlog_to_bag(in_path: str, out_path: str):
     # Avoid creating zillions of objects
     ros_gps_msg = sensor_msgs.msg.NavSatFix()
     ros_dvl_msg = geometry_msgs.msg.TwistStamped()
+
+    if tf:
+        util.create_topic('tf', writer, 'tf2_msgs/msg/TFMessage')
+        tf_map_rov = geometry_msgs.msg.TransformStamped()
+        tf_map_rov.header.frame_id = 'map'
+        tf_map_rov.child_frame_id = 'gps_input'
+    else:
+        tf_map_rov = None
 
     # Open tlog file for reading
     reader = mavutil.mavlink_connection(in_path)
@@ -68,6 +76,17 @@ def tlog_to_bag(in_path: str, out_path: str):
             writer.write(topic, rclpy.serialization.serialize_message(ros_gps_msg), int(time_us * 1e3))
             num_gps_msgs += 1
 
+            if tf:
+                rov_f_map = util.haversine_enu(gps0, (ros_gps_msg.latitude, ros_gps_msg.longitude))
+
+                tf_map_rov.transform.translation.x = rov_f_map[0]
+                tf_map_rov.transform.translation.y = rov_f_map[1]
+
+                # Write TFMessage
+                util.time_us_to_ros(time_us, tf_map_rov.header.stamp)
+                util.write_transform_message(writer, tf_map_rov)
+
+
         else:
             util.time_us_to_ros(time_us, ros_dvl_msg.header.stamp)
             ros_dvl_msg.header.frame_id = 'dvl'
@@ -89,10 +108,14 @@ def tlog_to_bag(in_path: str, out_path: str):
 def main():
     parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter, description=__doc__)
     parser.add_argument('--out', default=None, help='output bag path')
+    parser.add_argument('--tf', action='store_true', help='write interesting transforms')
+    # TODO replace with --gps0, default None
+    parser.add_argument('--lat0', type=float, default=0.0, help='map frame origin')
+    parser.add_argument('--lon0', type=float, default=0.0, help='map frame origin')
     parser.add_argument('in_path')
     args = parser.parse_args()
     out_path = util.default_bag_path(args.in_path) if args.out is None else args.out
-    tlog_to_bag(args.in_path, out_path)
+    tlog_to_bag(args.in_path, out_path, args.tf, (args.lat0, args.lon0))
 
 
 if __name__ == '__main__':

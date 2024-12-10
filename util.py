@@ -2,7 +2,10 @@ import math
 import os
 
 import builtin_interfaces.msg
+import geometry_msgs.msg
+import rclpy.serialization
 import rosbag2_py
+import tf2_msgs.msg
 
 # Time
 # ROS2:         https://github.com/ros2/rcl_interfaces/blob/humble/builtin_interfaces/msg/Time.msg
@@ -50,7 +53,7 @@ def ensure_topic_created(topic: str, topics: list[str], writer: rosbag2_py.Seque
         topics.append(topic)
 
 
-def haversine(gps1: tuple[float, float], gps2: tuple[float, float]) -> tuple[float, float]:
+def haversine_enu(gps1: tuple[float, float], gps2: tuple[float, float]) -> tuple[float, float]:
     """
     Calculate the difference between two GPS coordinates, return the result in meters
     :param gps1: (latitude, longitude)
@@ -89,3 +92,9 @@ def norm_angle(a):
     while a < -math.pi:
         a += 2 * math.pi
     return a
+
+
+def write_transform_message(writer: rosbag2_py.SequentialWriter, transform: geometry_msgs.msg.TransformStamped):
+    tf_message = tf2_msgs.msg.TFMessage()
+    tf_message.transforms.append(transform)
+    writer.write('tf', rclpy.serialization.serialize_message(tf_message), time_ros_to_ns(transform.header.stamp))
