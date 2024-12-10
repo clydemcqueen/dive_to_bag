@@ -10,7 +10,7 @@ Coordinate frames and transform tree:
                 acoustic -- pose of the ROV, from g2_acoustic log
 
 You must provide a static transform vessel -> antenna, e.g.,
-    ros2 run tf2_ros static_transform_publisher 1.5 -1 -0.5 0 0 0 vessel antenna
+    ros2 run tf2_ros static_transform_publisher 1.57 -1.273 -0.377 0 0 0 vessel antenna
 
 You can install python3-transforms3d from apt.
 """
@@ -26,7 +26,6 @@ import transforms3d
 import util
 
 
-# TODO how does bias compare to static transform?
 # TODO PASHR replaces HDT
 # TODO write GGA as NavSatFix, but for the sat_compass
 # TODO add --out parameter
