@@ -25,6 +25,8 @@ def video_to_bag(in_path: str, out_path: str, time_shift_s: float, topic: str, f
     # Force conversion to RGB
     reader.set(cv2.CAP_PROP_CONVERT_RGB, 1.0)
 
+    print(f'Shift time by {time_shift_s} seconds')
+
     if mono:
         print('Convert to monochrome')
 
@@ -86,8 +88,11 @@ def video_to_bag(in_path: str, out_path: str, time_shift_s: float, topic: str, f
         writer.write(topic, rclpy.serialization.serialize_message(image_msg), int(time_us * 1e3))
         num_frames += 1
 
+        if num_frames % 150 == 0:
+            print(f'{num_frames} images ({num_frames / 30} seconds)...')
+
     reader.release()
-    print(f'Wrote {num_frames} images')
+    print(f'Done, wrote {num_frames} images ({num_frames / 30} seconds)')
 
 
 def main():
