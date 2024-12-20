@@ -11,8 +11,6 @@ Coordinate frames and transform tree:
 
 You must provide a static transform vessel -> antenna, e.g.,
     ros2 run tf2_ros static_transform_publisher 1.57 -1.273 -0.377 0 0 0 vessel antenna
-
-You can install python3-transforms3d from apt.
 """
 
 import argparse
